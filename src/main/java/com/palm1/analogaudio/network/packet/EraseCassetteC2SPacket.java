@@ -1,21 +1,41 @@
 package com.palm1.analogaudio.network.packet;
 
-import com.palm1.analogaudio.AnalogAudio;
-
+import com.palm1.analogaudio.inventory.CassetteDeckMenu;
+import com.palm1.analogaudio.registry.ModItems;
+import com.palm1.analogaudio.network.AnalogAudioNetwork;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.network.NetworkEvent;
 
-public record EraseCassetteC2SPacket() implements CustomPacketPayload {
-    public static final Type<EraseCassetteC2SPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID, "erase_cassette"));
+import java.util.function.Supplier;
 
-    public static final StreamCodec<FriendlyByteBuf, EraseCassetteC2SPacket> STREAM_CODEC = StreamCodec
-            .unit(new EraseCassetteC2SPacket());
+public record EraseCassetteC2SPacket() {
+    public void encode(FriendlyByteBuf buffer) {
+    }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public static EraseCassetteC2SPacket decode(FriendlyByteBuf buffer) {
+        return new EraseCassetteC2SPacket();
+    }
+
+    public static void handle(EraseCassetteC2SPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
+        context.enqueueWork(() -> {
+            Player player = context.getSender();
+            if (player == null) return;
+            if (player.containerMenu instanceof CassetteDeckMenu deckMenu) {
+                ItemStack cassette = deckMenu.getInventory().getItem(0);
+                if (!cassette.isEmpty() && cassette.is(ModItems.CASSETTE_TAPE.get())) {
+                    if (cassette.hasTag()) {
+                        cassette.getTag().remove("CassetteData");
+                    }
+                    deckMenu.getInventory().setChanged();
+                    AnalogAudioNetwork.CHANNEL.reply(new WriteResultS2CPacket(2), context);
+                } else {
+                    AnalogAudioNetwork.CHANNEL.reply(new WriteResultS2CPacket(3), context);
+                }
+            }
+        });
+        context.setPacketHandled(true);
     }
 }

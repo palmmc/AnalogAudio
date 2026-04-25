@@ -1,40 +1,27 @@
 package com.palm1.analogaudio.integration.voicechat;
 
-import com.palm1.analogaudio.client.render.SpeakerBlockRenderer;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.palm1.analogaudio.client.render.WalkieTalkieRenderer;
-import com.palm1.analogaudio.registry.ModBlockEntities;
-import com.palm1.analogaudio.registry.ModItems;
-
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.ModelEvent;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
-import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.client.event.ModelEvent;
 
 public class VoicechatClientHooks {
-    private static WalkieTalkieRenderer cachedWalkieTalkieRenderer;
+    private static WalkieTalkieRenderer walkieTalkieRenderer;
 
-    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(ModBlockEntities.SPEAKER.get(),
-                SpeakerBlockRenderer::new);
+    public static void renderWalkieTalkie(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack,
+            MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        if (walkieTalkieRenderer == null) {
+            walkieTalkieRenderer = new WalkieTalkieRenderer(
+                    Minecraft.getInstance().getItemRenderer(),
+                    Minecraft.getInstance().getEntityModels());
+        }
+        walkieTalkieRenderer.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
     }
 
-    public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
-        event.registerItem(new IClientItemExtensions() {
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                if (cachedWalkieTalkieRenderer == null) {
-                    cachedWalkieTalkieRenderer = new WalkieTalkieRenderer(
-                            Minecraft.getInstance().getBlockEntityRenderDispatcher(),
-                            Minecraft.getInstance().getEntityModels());
-                }
-                return cachedWalkieTalkieRenderer;
-            }
-        }, ModItems.WALKIE_TALKIE.get());
-    }
-
-    public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
+    public static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
         event.register(WalkieTalkieRenderer.BODY_MODEL);
         event.register(WalkieTalkieRenderer.BUTTON_MODEL);
     }

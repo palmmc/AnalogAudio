@@ -3,7 +3,6 @@ package com.palm1.analogaudio.block.entity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -18,7 +17,6 @@ import net.minecraft.world.phys.HitResult;
 
 import com.palm1.analogaudio.block.SpeakerBlock;
 import com.palm1.analogaudio.client.audio.ClientAudioEngine;
-import com.palm1.analogaudio.integration.SableCompat;
 import com.palm1.analogaudio.integration.voicechat.SpeakerInstance;
 import com.palm1.analogaudio.integration.voicechat.SpeakerManager;
 import com.palm1.analogaudio.registry.ModBlockEntities;
@@ -47,7 +45,7 @@ public class SpeakerBlockEntity extends BlockEntity implements SpeakerInstance {
 
     public void setFrequency(int frequency) {
         int oldFreq = this.frequency;
-        this.frequency = Math.clamp(frequency, 1, 255);
+        this.frequency = Mth.clamp(frequency, 1, 255);
         this.setChanged();
         if (this.level != null) {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
@@ -73,14 +71,14 @@ public class SpeakerBlockEntity extends BlockEntity implements SpeakerInstance {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         tag.putInt("Frequency", this.frequency);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         if (tag.contains("Frequency")) {
             this.frequency = tag.getInt("Frequency");
         }
@@ -92,17 +90,15 @@ public class SpeakerBlockEntity extends BlockEntity implements SpeakerInstance {
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveWithoutMetadata(registries);
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
+        saveAdditional(tag);
+        return tag;
     }
 
     @Override
     public Vec3 getPosition() {
-        if (this.level == null)
-            return Vec3.atCenterOf(this.worldPosition);
-
-        return SableCompat.getGlobalPos(this.level,
-                Vec3.atCenterOf(this.worldPosition));
+        return Vec3.atCenterOf(this.worldPosition);
     }
 
     @Override
@@ -175,6 +171,7 @@ public class SpeakerBlockEntity extends BlockEntity implements SpeakerInstance {
 
     @Override
     public Object getIdentity() {
+        if (this.level == null) return "speaker_unknown";
         return "speaker_" + this.level.dimension().location() + "_"
                 + this.worldPosition.toShortString().replace(" ", "");
     }

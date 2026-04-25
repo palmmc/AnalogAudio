@@ -139,6 +139,7 @@ public class ClientAudioEngine {
 
                 if (responseCode >= 200 && responseCode < 300) {
                     long contentLength = connection.getContentLengthLong();
+                    AnalogAudio.LOGGER.info("Starting download of {} bytes...", contentLength);
                     try (InputStream in = connection.getInputStream();
                             OutputStream out = Files.newOutputStream(file)) {
                         byte[] buffer = new byte[8192];
@@ -156,7 +157,6 @@ public class ClientAudioEngine {
                     AnalogAudio.LOGGER.info("Download complete.");
                     CassetteDeckScreen.statusMessage = Component
                             .translatable("gui.analogaudio.cassette_deck.status.write_success");
-                    // Clear action bar when finished
                     Minecraft.getInstance().player.displayClientMessage(Component.empty(),
                             true);
                 } else {

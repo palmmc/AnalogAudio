@@ -1,9 +1,16 @@
 package com.palm1.analogaudio.client.gui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Axis;
+import com.palm1.analogaudio.AnalogAudio;
+import com.palm1.analogaudio.inventory.RadioMenu;
+import com.palm1.analogaudio.network.AnalogAudioNetwork;
+import com.palm1.analogaudio.network.packet.UpdateRadioSettingsC2SPacket;
+import com.palm1.analogaudio.registry.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ImageButton;
-import net.minecraft.client.gui.components.WidgetSprites;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -15,39 +22,29 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
-
-import com.mojang.math.Axis;
 import org.lwjgl.glfw.GLFW;
 
-import com.palm1.analogaudio.AnalogAudio;
-import com.palm1.analogaudio.inventory.RadioMenu;
-import com.palm1.analogaudio.network.packet.UpdateRadioSettingsC2SPacket;
-import com.palm1.analogaudio.registry.ModSounds;
-
 public class RadioScreen extends AbstractContainerScreen<RadioMenu> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
-            "textures/gui/radio.png");
-    private static final ResourceLocation ICONS = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation TEXTURE = new ResourceLocation(AnalogAudio.MODID, "textures/gui/radio.png");
+    private static final ResourceLocation ICONS = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/cassette_slot.png");
-    private static final ResourceLocation ICONS_HOVER = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation ICONS_HOVER = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/cassette_slot_hover.png");
 
-    private static final ResourceLocation PLAY_SPRITE = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation PLAY_SPRITE = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/play.png");
-    private static final ResourceLocation PLAY_HOVER = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation PLAY_HOVER = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/play_hover.png");
-    private static final ResourceLocation PLAY_SELECTED = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation PLAY_SELECTED = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/play_selected.png");
 
-    private static final ResourceLocation PAUSE_SPRITE = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation PAUSE_SPRITE = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/pause.png");
-    private static final ResourceLocation PAUSE_HOVER = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation PAUSE_HOVER = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/pause_hover.png");
-    private static final ResourceLocation PAUSE_SELECTED = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation PAUSE_SELECTED = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/pause_selected.png");
 
     private float volume;
@@ -78,8 +75,8 @@ public class RadioScreen extends AbstractContainerScreen<RadioMenu> {
     protected void init() {
         super.init();
 
-        ImageButton playBtn = new ImageButton(this.leftPos + 100, this.topPos + 44, 16, 16,
-                new WidgetSprites(PLAY_SPRITE, PLAY_SPRITE), (btn) -> {
+        ImageButton playBtn = new ImageButton(this.leftPos + 100, this.topPos + 44, 16, 16, 0, 0, 0, PLAY_SPRITE, 16,
+                16, (btn) -> {
                     this.playing = true;
                     this.playClickSound();
                     this.sendUpdate();
@@ -101,8 +98,8 @@ public class RadioScreen extends AbstractContainerScreen<RadioMenu> {
         playBtn.setTooltip(Tooltip.create(Component.translatable("gui.analogaudio.radio.play")));
         this.addRenderableWidget(playBtn);
 
-        ImageButton pauseBtn = new ImageButton(this.leftPos + 118, this.topPos + 44, 16, 16,
-                new WidgetSprites(PAUSE_SPRITE, PAUSE_SPRITE), (btn) -> {
+        ImageButton pauseBtn = new ImageButton(this.leftPos + 118, this.topPos + 44, 16, 16, 0, 0, 0, PAUSE_SPRITE, 16,
+                16, (btn) -> {
                     this.playing = false;
                     this.playClickSound();
                     this.sendUpdate();
@@ -124,8 +121,8 @@ public class RadioScreen extends AbstractContainerScreen<RadioMenu> {
         pauseBtn.setTooltip(Tooltip.create(Component.translatable("gui.analogaudio.radio.pause")));
         this.addRenderableWidget(pauseBtn);
 
-        ImageButton loopBtn = new ImageButton(this.leftPos + 139, this.topPos + 64, 20, 9,
-                new WidgetSprites(TEXTURE, TEXTURE), (btn) -> {
+        ImageButton loopBtn = new ImageButton(this.leftPos + 139, this.topPos + 64, 20, 9, 0, 0, 0, TEXTURE, 176, 186,
+                (btn) -> {
                     this.looping = !this.looping;
                     float pitch = 1.0f;
                     float vol = 1.0f;
@@ -158,23 +155,74 @@ public class RadioScreen extends AbstractContainerScreen<RadioMenu> {
     }
 
     private void sendUpdate() {
-        PacketDistributor.sendToServer(new UpdateRadioSettingsC2SPacket(this.menu.getPos(), volume, looping, playing));
-    }
-
-    @Override
-    protected void renderSlotHighlight(GuiGraphics guiGraphics, Slot slot, int mouseX, int mouseY, float partialTick) {
-        if (slot.index == 0)
-            return;
-        super.renderSlotHighlight(guiGraphics, slot, mouseX, mouseY, partialTick);
+        AnalogAudioNetwork.sendToServer(new UpdateRadioSettingsC2SPacket(this.menu.getPos(), volume, looping, playing));
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        this.renderBackground(guiGraphics);
+
+        int k = this.leftPos;
+        int l = this.topPos;
+        this.renderBg(guiGraphics, partialTick, mouseX, mouseY);
+
+        RenderSystem.disableDepthTest();
+        for (net.minecraft.client.gui.components.Renderable renderable : this.renderables) {
+            renderable.render(guiGraphics, mouseX, mouseY, partialTick);
+        }
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(k, l, 0.0F);
+        this.hoveredSlot = null;
+
+        for (int i = 0; i < this.menu.slots.size(); ++i) {
+            Slot slot = this.menu.slots.get(i);
+            if (slot.isActive()) {
+                this.renderSlotCustom(guiGraphics, slot);
+            }
+
+            if (this.isHovering(slot, mouseX, mouseY) && slot.isActive()) {
+                this.hoveredSlot = slot;
+                if (slot.index != 0) {
+                    renderSlotHighlight(guiGraphics, slot.x, slot.y, 0);
+                }
+            }
+        }
+
+        this.renderLabels(guiGraphics, mouseX, mouseY);
+        guiGraphics.pose().popPose();
+        RenderSystem.enableDepthTest();
+
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+
+        ItemStack carried = this.menu.getCarried();
+        if (!carried.isEmpty()) {
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(0, 0, 250);
+            guiGraphics.renderItem(carried, mouseX - 8, mouseY - 8);
+            guiGraphics.renderItemDecorations(this.font, carried, mouseX - 8, mouseY - 8);
+            guiGraphics.pose().popPose();
+        }
 
         if (isDraggingDial) {
             updateVolumeFromMouse(mouseX, mouseY);
+        }
+    }
+
+    private void renderSlotCustom(GuiGraphics guiGraphics, Slot slot) {
+        ItemStack stack = slot.getItem();
+        if (slot.index == 0) {
+            if (!stack.isEmpty()) {
+                guiGraphics.pose().pushPose();
+                guiGraphics.pose().translate(slot.x + 8, slot.y + 8, 0);
+                guiGraphics.pose().scale(4.0f, 4.0f, 1.0f);
+                guiGraphics.renderItem(stack, -8, -8);
+                guiGraphics.renderItemDecorations(this.font, stack, -8, -8);
+                guiGraphics.pose().popPose();
+            }
+        } else {
+            guiGraphics.renderItem(stack, slot.x, slot.y);
+            guiGraphics.renderItemDecorations(this.font, stack, slot.x, slot.y);
         }
     }
 
@@ -182,10 +230,10 @@ public class RadioScreen extends AbstractContainerScreen<RadioMenu> {
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 19, this.imageWidth, this.imageHeight, 176, 186);
 
-        boolean isSlotHovered = this.isHovering(this.menu.slots.get(0).x, this.menu.slots.get(0).y, 16, 16, mouseX,
-                mouseY);
+        Slot slot0 = this.menu.slots.get(0);
+        boolean isSlotHovered = this.isHovering(slot0.x, slot0.y, 16, 16, mouseX, mouseY);
         ResourceLocation slotIcon = isSlotHovered ? ICONS_HOVER : ICONS;
-        guiGraphics.blit(slotIcon, this.leftPos + 16, this.topPos + 29, 68, 44, 0, 0, 34, 22, 34, 22);
+        guiGraphics.blit(slotIcon, this.leftPos + slot0.x - 26, this.topPos + slot0.y - 14, 0, 0, 68, 44, 68, 44);
 
         int volInt = (int) (volume * 100);
         String volText = volInt + "%";
@@ -202,21 +250,30 @@ public class RadioScreen extends AbstractContainerScreen<RadioMenu> {
 
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(this.leftPos + 149.0f, this.topPos + 52, 0);
-        guiGraphics.pose().rotateAround(Axis.ZP.rotationDegrees(dialRotation), 0, 0, 0);
+        guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(dialRotation));
         guiGraphics.blit(TEXTURE, -9, -9, dialU, 0, 18, 18, 176, 186);
         guiGraphics.pose().popPose();
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (this.isHovering(140, 44, 18, 18, mouseX, mouseY)) {
+            guiGraphics.renderTooltip(this.font, Component.translatable("gui.analogaudio.radio.volume"),
+                    mouseX - this.leftPos, mouseY - this.topPos);
+        }
     }
 
     @Override
     protected boolean isHovering(int x, int y, int width, int height, double mouseX, double mouseY) {
-        if (this.menu.slots.get(0).x == x && this.menu.slots.get(0).y == y) {
-            return super.isHovering(16, 29, 68, 44, mouseX, mouseY);
+        Slot slot0 = this.menu.slots.get(0);
+        if (slot0.x == x && slot0.y == y) {
+            return super.isHovering(slot0.x - 26, slot0.y - 14, 68, 44, mouseX, mouseY);
         }
         return super.isHovering(x, y, width, height, mouseX, mouseY);
+    }
+
+    private boolean isHovering(Slot slot, double mouseX, double mouseY) {
+        return this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY);
     }
 
     @Override
@@ -258,21 +315,5 @@ public class RadioScreen extends AbstractContainerScreen<RadioMenu> {
             Minecraft.getInstance().getSoundManager()
                     .play(SimpleSoundInstance.forUI(ModSounds.FREQUENCY_TICK.get(), 1.0f + (volume * 0.5f), 1.0f));
         }
-    }
-
-    @Override
-    protected void renderSlot(GuiGraphics guiGraphics, Slot slot) {
-        if (slot.container == this.menu.getBlockEntity().inventory) {
-            ItemStack stack = slot.getItem();
-            if (!stack.isEmpty()) {
-                guiGraphics.pose().pushPose();
-                guiGraphics.pose().translate(slot.x + 8, slot.y + 8, 0);
-                guiGraphics.pose().scale(4.0f, 4.0f, 1.0f);
-                guiGraphics.renderItem(stack, -8, -8);
-                guiGraphics.pose().popPose();
-                return;
-            }
-        }
-        super.renderSlot(guiGraphics, slot);
     }
 }

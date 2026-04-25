@@ -26,11 +26,12 @@
   "gui.analogaudio.rotary_tuner.title": "Tuning Frequency",
   "gui.analogaudio.radio.play": "Play",
   "gui.analogaudio.radio.pause": "Pause",
-  "gui.analogaudio.radio.loop": "Toggle Loop",
+  "gui.analogaudio.radio.loop": "Loop",
+  "gui.analogaudio.radio.volume": "Adjust Volume",
   // Tooltip Translations
   "tooltip.analogaudio.walkie_talkie.frequency": "Frequency: %s",
   // Creative Category Translations
-  "itemGroup.analogaudio.analog_audio_tab": "Analog Audio",
+  "itemGroup.analogaudio.analogaudio_tab": "Analog Audio",
   // Voice Chat Category Translations
   "voicechat.category.walkie_talkies": "Walkie Talkies",
   "voicechat.category.walkie_talkies.description": "Adjust the volume of walkie talkie signals.",

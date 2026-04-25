@@ -6,7 +6,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -20,7 +19,6 @@ import com.palm1.analogaudio.block.RadioBlock;
 import com.palm1.analogaudio.block.entity.RadioBlockEntity;
 import com.palm1.analogaudio.config.ModConfig;
 import com.palm1.analogaudio.item.CassetteData;
-import com.palm1.analogaudio.registry.ModDataComponents;
 
 public class RadioBlockRenderer implements BlockEntityRenderer<RadioBlockEntity> {
     private final Font font;
@@ -69,9 +67,8 @@ public class RadioBlockRenderer implements BlockEntityRenderer<RadioBlockEntity>
 
         poseStack.scale(0.86f, 0.86f, 0.86f);
 
-        ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath("analogaudio", "item/cassette_tape_3d");
         BakedModel model = Minecraft.getInstance().getModelManager()
-                .getModel(ModelResourceLocation.standalone(modelLoc));
+                .getModel(new ResourceLocation("analogaudio", "item/cassette_tape_3d"));
 
         Minecraft.getInstance().getItemRenderer().render(
                 cassette,
@@ -83,7 +80,7 @@ public class RadioBlockRenderer implements BlockEntityRenderer<RadioBlockEntity>
                 combinedOverlay,
                 model);
 
-        CassetteData data = cassette.get(ModDataComponents.CASSETTE_DATA.get());
+        CassetteData data = CassetteData.get(cassette);
 
         if (data != null) {
             String label = data.name();

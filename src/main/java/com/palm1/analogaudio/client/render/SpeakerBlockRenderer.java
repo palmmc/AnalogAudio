@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.palm1.analogaudio.block.entity.SpeakerBlockEntity;
 import com.palm1.analogaudio.config.ModConfig;
-import com.palm1.analogaudio.integration.SableCompat;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -12,12 +11,10 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 
 public class SpeakerBlockRenderer implements BlockEntityRenderer<SpeakerBlockEntity> {
         @SuppressWarnings("unused")
@@ -30,16 +27,10 @@ public class SpeakerBlockRenderer implements BlockEntityRenderer<SpeakerBlockEnt
         @Override
         public void render(SpeakerBlockEntity blockEntity, float partialTick, PoseStack poseStack,
                         MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-                Level currentLevel = blockEntity.getLevel();
                 Level mainLevel = Minecraft.getInstance().level;
                 BlockState state = blockEntity.getBlockState();
-                BlockPos localPos = blockEntity.getBlockPos();
-                @SuppressWarnings("unused")
-                BlockPos globalPos = localPos;
                 long globalTime = mainLevel != null ? mainLevel.getGameTime() : 0;
-                Vec3 globalVec = SableCompat.getGlobalPos(currentLevel, Vec3.atCenterOf(localPos));
 
-                globalPos = BlockPos.containing(globalVec);
                 float currentScale = 1.0f;
                 if (ModConfig.CLIENT_CONFIG.enableSpeakerAnimation.get()) {
                         currentScale = blockEntity.updateAndGetAnimationScale(globalTime, partialTick, 1.0f);

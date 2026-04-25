@@ -1,23 +1,24 @@
 package com.palm1.analogaudio.network.packet;
 
-import com.palm1.analogaudio.AnalogAudio;
-
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkEvent;
 
-public record WriteResultS2CPacket(int statusType) implements CustomPacketPayload {
-    public static final Type<WriteResultS2CPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID, "write_result"));
+import java.util.function.Supplier;
 
-    public static final StreamCodec<FriendlyByteBuf, WriteResultS2CPacket> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT, WriteResultS2CPacket::statusType,
-            WriteResultS2CPacket::new);
+public record WriteResultS2CPacket(int statusType) {
+    public void encode(FriendlyByteBuf buffer) {
+        buffer.writeInt(statusType);
+    }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public static WriteResultS2CPacket decode(FriendlyByteBuf buffer) {
+        return new WriteResultS2CPacket(buffer.readInt());
+    }
+
+    public static void handle(WriteResultS2CPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
+        context.enqueueWork(() -> {
+            com.palm1.analogaudio.network.ClientPacketHandlers.handleWriteResult(message);
+        });
+        context.setPacketHandled(true);
     }
 }

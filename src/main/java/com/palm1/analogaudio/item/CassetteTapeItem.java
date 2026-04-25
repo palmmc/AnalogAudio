@@ -5,10 +5,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.util.List;
-
-import com.palm1.analogaudio.registry.ModDataComponents;
 
 public class CassetteTapeItem extends Item {
     public CassetteTapeItem(Properties properties) {
@@ -16,9 +16,9 @@ public class CassetteTapeItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, context, tooltip, flag);
-        var data = stack.get(ModDataComponents.CASSETTE_DATA.get());
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+        var data = CassetteData.get(stack);
         if (data != null && !data.name().isEmpty()) {
             int insertIndex = Math.min(tooltip.size(), 1);
             tooltip.add(insertIndex, Component.literal(data.name()).withStyle(ChatFormatting.GRAY));

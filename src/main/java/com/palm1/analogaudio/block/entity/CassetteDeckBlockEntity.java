@@ -1,7 +1,6 @@
 package com.palm1.analogaudio.block.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.MenuProvider;
@@ -11,22 +10,30 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.Containers;
+import net.minecraft.world.level.Level;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.palm1.analogaudio.inventory.CassetteDeckMenu;
 import com.palm1.analogaudio.registry.ModBlockEntities;
 import com.palm1.analogaudio.registry.ModSounds;
+import com.palm1.analogaudio.registry.ModItems;
 
 public class CassetteDeckBlockEntity extends BlockEntity implements MenuProvider {
-    public final net.minecraft.world.SimpleContainer inventory = new net.minecraft.world.SimpleContainer(1) {
+    public final SimpleContainer inventory = new SimpleContainer(1) {
         @Override
-        public boolean canPlaceItem(int index, net.minecraft.world.item.ItemStack stack) {
-            return stack.is(com.palm1.analogaudio.registry.ModItems.CASSETTE_TAPE.get());
+        public boolean canPlaceItem(int index, ItemStack stack) {
+            return stack.is(ModItems.CASSETTE_TAPE.get());
         }
     };
     private boolean wasEmpty = true;
-    private net.minecraft.world.item.ItemStack lastCassette = net.minecraft.world.item.ItemStack.EMPTY;
+    private ItemStack lastCassette = ItemStack.EMPTY;
     private long insertTime = 0;
     private long removeTime = 0;
 
@@ -36,9 +43,9 @@ public class CassetteDeckBlockEntity extends BlockEntity implements MenuProvider
         this.wasEmpty = inventory.isEmpty();
 
         inventory.addListener(container -> {
-            net.minecraft.world.item.ItemStack currentCassette = container.getItem(0);
+            ItemStack currentCassette = container.getItem(0);
             boolean isEmpty = currentCassette.isEmpty();
-            boolean itemChanged = !net.minecraft.world.item.ItemStack.matches(currentCassette, lastCassette);
+            boolean itemChanged = !ItemStack.matches(currentCassette, lastCassette);
 
             if (this.level != null && !this.level.isClientSide()) {
                 if (itemChanged) {
@@ -74,14 +81,14 @@ public class CassetteDeckBlockEntity extends BlockEntity implements MenuProvider
     }
 
     @Override
-    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
-        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
-    public net.minecraft.nbt.CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-        net.minecraft.nbt.CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
+        saveAdditional(tag);
         return tag;
     }
 
@@ -92,23 +99,23 @@ public class CassetteDeckBlockEntity extends BlockEntity implements MenuProvider
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.put("Inventory", inventory.createTag(registries));
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        tag.put("Inventory", inventory.createTag());
         tag.putLong("InsertTime", insertTime);
         tag.putLong("RemoveTime", removeTime);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        inventory.fromTag(tag.getList("Inventory", 10), registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        inventory.fromTag(tag.getList("Inventory", 10));
         insertTime = tag.getLong("InsertTime");
         removeTime = tag.getLong("RemoveTime");
         this.wasEmpty = inventory.isEmpty();
     }
 
-    public net.minecraft.world.item.ItemStack getCassette() {
+    public ItemStack getCassette() {
         return inventory.getItem(0);
     }
 
@@ -118,5 +125,12 @@ public class CassetteDeckBlockEntity extends BlockEntity implements MenuProvider
 
     public long getRemoveTime() {
         return removeTime;
+    }
+
+    public void drops() {
+        Containers.dropContents(this.level, this.worldPosition, inventory);
+    }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, CassetteDeckBlockEntity blockEntity) {
     }
 }

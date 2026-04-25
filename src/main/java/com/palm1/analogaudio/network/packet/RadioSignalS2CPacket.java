@@ -1,38 +1,36 @@
 package com.palm1.analogaudio.network.packet;
 
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.UUID;
+import java.util.function.Supplier;
 
-import com.palm1.analogaudio.AnalogAudio;
+public record RadioSignalS2CPacket(UUID senderUuid, Vec3 position, int frequency, boolean isSpeaker) {
+    public void encode(FriendlyByteBuf buffer) {
+        buffer.writeUUID(senderUuid);
+        buffer.writeDouble(position.x);
+        buffer.writeDouble(position.y);
+        buffer.writeDouble(position.z);
+        buffer.writeInt(frequency);
+        buffer.writeBoolean(isSpeaker);
+    }
 
-public record RadioSignalS2CPacket(UUID senderUuid, Vec3 position, int frequency, boolean isSpeaker)
-                implements CustomPacketPayload {
+    public static RadioSignalS2CPacket decode(FriendlyByteBuf buffer) {
+        return new RadioSignalS2CPacket(
+                buffer.readUUID(),
+                new Vec3(buffer.readDouble(), buffer.readDouble(), buffer.readDouble()),
+                buffer.readInt(),
+                buffer.readBoolean()
+        );
+    }
 
-        public static final Type<RadioSignalS2CPacket> TYPE = new Type<>(
-                        ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID, "radio_signal"));
-
-        public static final StreamCodec<FriendlyByteBuf, Vec3> VEC3_STREAM_CODEC = StreamCodec.composite(
-                        ByteBufCodecs.DOUBLE, Vec3::x,
-                        ByteBufCodecs.DOUBLE, Vec3::y,
-                        ByteBufCodecs.DOUBLE, Vec3::z,
-                        Vec3::new);
-
-        public static final StreamCodec<FriendlyByteBuf, RadioSignalS2CPacket> STREAM_CODEC = StreamCodec.composite(
-                        UUIDUtil.STREAM_CODEC, RadioSignalS2CPacket::senderUuid,
-                        VEC3_STREAM_CODEC, RadioSignalS2CPacket::position,
-                        ByteBufCodecs.VAR_INT, RadioSignalS2CPacket::frequency,
-                        ByteBufCodecs.BOOL, RadioSignalS2CPacket::isSpeaker,
-                        RadioSignalS2CPacket::new);
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-                return TYPE;
-        }
+    public static void handle(RadioSignalS2CPacket message, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
+        context.enqueueWork(() -> {
+            com.palm1.analogaudio.network.ClientPacketHandlers.handleRadioSignal(message);
+        });
+        context.setPacketHandled(true);
+    }
 }

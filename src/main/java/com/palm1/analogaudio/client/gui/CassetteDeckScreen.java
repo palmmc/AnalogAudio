@@ -1,11 +1,19 @@
 package com.palm1.analogaudio.client.gui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.palm1.analogaudio.AnalogAudio;
+import com.palm1.analogaudio.inventory.CassetteDeckMenu;
+import com.palm1.analogaudio.item.CassetteData;
+import com.palm1.analogaudio.network.AnalogAudioNetwork;
+import com.palm1.analogaudio.network.packet.EraseCassetteC2SPacket;
+import com.palm1.analogaudio.network.packet.WriteCassetteC2SPacket;
+import com.palm1.analogaudio.registry.ModItems;
+import com.palm1.analogaudio.registry.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.sounds.SoundManager;
@@ -15,50 +23,39 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
-
 import org.lwjgl.glfw.GLFW;
-
-import com.palm1.analogaudio.AnalogAudio;
-import com.palm1.analogaudio.item.CassetteData;
-import com.palm1.analogaudio.inventory.CassetteDeckMenu;
-import com.palm1.analogaudio.network.packet.EraseCassetteC2SPacket;
-import com.palm1.analogaudio.network.packet.WriteCassetteC2SPacket;
-import com.palm1.analogaudio.registry.ModDataComponents;
-import com.palm1.analogaudio.registry.ModItems;
-import com.palm1.analogaudio.registry.ModSounds;
 
 import java.util.UUID;
 
 public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu> {
-    private static final ResourceLocation GUI_TEXTURE = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation GUI_TEXTURE = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/cassette_deck.png");
 
-    private static final ResourceLocation WRITE_NORMAL = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation WRITE_NORMAL = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/write.png");
-    private static final ResourceLocation WRITE_HOVER = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation WRITE_HOVER = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/write_hover.png");
-    private static final ResourceLocation WRITE_SELECTED = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation WRITE_SELECTED = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/write_selected.png");
 
-    private static final ResourceLocation ERASE_NORMAL = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation ERASE_NORMAL = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/erase.png");
-    private static final ResourceLocation ERASE_HOVER = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation ERASE_HOVER = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/erase_hover.png");
-    private static final ResourceLocation ERASE_SELECTED = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation ERASE_SELECTED = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/sprites/icons/erase_selected.png");
 
-    private static final ResourceLocation COLOR_NORMAL = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
-            "textures/gui/sprites/icons/color_button.png");
-    private static final ResourceLocation COLOR_HOVER = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
-            "textures/gui/sprites/icons/color_button_hover.png");
-    private static final ResourceLocation COLOR_SELECTED = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
-            "textures/gui/sprites/icons/color_button_selected.png");
+    private static final ResourceLocation COLOR_NORMAL = new ResourceLocation(AnalogAudio.MODID,
+            "textures/gui/sprites/icons/color.png");
+    private static final ResourceLocation COLOR_HOVER = new ResourceLocation(AnalogAudio.MODID,
+            "textures/gui/sprites/icons/color_hover.png");
+    private static final ResourceLocation COLOR_SELECTED = new ResourceLocation(AnalogAudio.MODID,
+            "textures/gui/sprites/icons/color_selected.png");
 
-    private static final ResourceLocation SLOT_NORMAL = ResourceLocation.fromNamespaceAndPath(
-            AnalogAudio.MODID, "icons/cassette_slot");
-    private static final ResourceLocation SLOT_HOVER = ResourceLocation.fromNamespaceAndPath(
-            AnalogAudio.MODID, "icons/cassette_slot_hover");
+    private static final ResourceLocation SLOT_NORMAL = new ResourceLocation(AnalogAudio.MODID,
+            "textures/gui/sprites/icons/cassette_slot.png");
+    private static final ResourceLocation SLOT_HOVER = new ResourceLocation(AnalogAudio.MODID,
+            "textures/gui/sprites/icons/cassette_slot_hover.png");
 
     private EditBox urlBox;
     private EditBox nameBox;
@@ -102,7 +99,7 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
         this.urlBox = new EditBox(this.font, this.leftPos + 10, this.topPos + 26, 97, 10,
                 Component.translatable("gui.analogaudio.cassette_deck.url")) {
             @Override
-            public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
                 int outlineColor = this.isHovered() ? 0xFF4A4441 : 0xFF352F2C;
                 int bgColor = this.isHovered() ? 0xFF4E3B33 : 0xFF3E2723;
 
@@ -116,7 +113,7 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
                 guiGraphics.pose().scale(0.85f, 0.85f, 1.0f);
                 guiGraphics.pose().translate(-this.getX(), -this.getY(), 0);
 
-                super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
+                super.render(guiGraphics, mouseX, mouseY, partialTick);
                 guiGraphics.pose().popPose();
             }
         };
@@ -128,7 +125,7 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
         this.nameBox = new EditBox(this.font, this.leftPos + 10, this.topPos + 48, 97, 10,
                 Component.translatable("gui.analogaudio.cassette_deck.name")) {
             @Override
-            public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
                 int outlineColor = this.isHovered() ? 0xFF4A4441 : 0xFF352F2C;
                 int bgColor = this.isHovered() ? 0xFF4E3B33 : 0xFF3E2723;
 
@@ -142,7 +139,7 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
                 guiGraphics.pose().scale(0.85f, 0.85f, 1.0f);
                 guiGraphics.pose().translate(-this.getX(), -this.getY(), 0);
 
-                super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
+                super.render(guiGraphics, mouseX, mouseY, partialTick);
                 guiGraphics.pose().popPose();
             }
         };
@@ -167,19 +164,15 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
                 final DyeColor color = orderedColors[row * 4 + col];
                 final int colorVal = 0xFF000000 | color.getFireworkColor();
                 ImageButton colorBtn = new ImageButton(this.leftPos + 113 + (col * 13), this.topPos + 26 + (row * 14),
-                        12, 13,
-                        new WidgetSprites(COLOR_NORMAL, COLOR_NORMAL), button -> {
+                        12, 13, 0, 0, 0, COLOR_NORMAL, 12, 13, button -> {
                             this.selectedColor = colorVal;
                             ItemStack stack = this.menu.getSlot(0).getItem();
-                            if (!stack.isEmpty()
-                                    && stack.is(ModItems.CASSETTE_TAPE.get())) {
-                                CassetteData oldData = stack
-                                        .get(ModDataComponents.CASSETTE_DATA.get());
+                            if (!stack.isEmpty() && stack.is(ModItems.CASSETTE_TAPE.get())) {
+                                CassetteData oldData = CassetteData.get(stack);
                                 String uuid = oldData != null ? oldData.uuid() : UUID.randomUUID().toString();
                                 String url = oldData != null ? oldData.url() : "";
                                 String name = oldData != null ? oldData.name() : "";
-                                stack.set(ModDataComponents.CASSETTE_DATA.get(),
-                                        new CassetteData(uuid, url, name, colorVal));
+                                CassetteData.set(stack, new CassetteData(uuid, url, name, colorVal));
                             }
                         }) {
                     @Override
@@ -205,10 +198,10 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
             }
         }
 
-        ImageButton writeBtn = new ImageButton(this.leftPos + 8, this.topPos + 67, 18, 18,
-                new WidgetSprites(WRITE_NORMAL, WRITE_NORMAL), button -> {
+        ImageButton writeBtn = new ImageButton(this.leftPos + 8, this.topPos + 67, 18, 18, 0, 0, 0, WRITE_NORMAL, 18,
+                18, button -> {
                     if (this.menu.getSlot(0).hasItem()) {
-                        PacketDistributor.sendToServer(
+                        AnalogAudioNetwork.sendToServer(
                                 new WriteCassetteC2SPacket(this.urlBox.getValue(), this.nameBox.getValue(),
                                         this.selectedColor));
                         setStatus(Component.translatable("gui.analogaudio.cassette_deck.status.writing"),
@@ -241,10 +234,10 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
         writeBtn.setTooltip(Tooltip.create(Component.translatable("gui.analogaudio.cassette_deck.write")));
         this.addRenderableWidget(writeBtn);
 
-        ImageButton eraseBtn = new ImageButton(this.leftPos + 26, this.topPos + 67, 18, 18,
-                new WidgetSprites(ERASE_NORMAL, ERASE_NORMAL), button -> {
+        ImageButton eraseBtn = new ImageButton(this.leftPos + 26, this.topPos + 67, 18, 18, 0, 0, 0, ERASE_NORMAL, 18,
+                18, button -> {
                     if (this.menu.getSlot(0).hasItem()) {
-                        PacketDistributor.sendToServer(
+                        AnalogAudioNetwork.sendToServer(
                                 new EraseCassetteC2SPacket());
                         setStatus(Component.translatable("gui.analogaudio.cassette_deck.status.erased"),
                                 StatusType.SUCCESS, 60);
@@ -307,8 +300,7 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
         if (stack.isEmpty()) {
             selectedColor = 0xFFFFFFFF;
         } else if (stack.is(ModItems.CASSETTE_TAPE.get())) {
-            CassetteData data = stack
-                    .get(ModDataComponents.CASSETTE_DATA.get());
+            CassetteData data = CassetteData.get(stack);
             if (data != null) {
                 selectedColor = data.color();
             } else {
@@ -333,33 +325,67 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
     }
 
     @Override
-    protected void renderSlot(GuiGraphics guiGraphics, Slot slot) {
-        if (slot.index == 0) {
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(slot.x, slot.y, 0);
-            guiGraphics.pose().scale(2.0f, 2.0f, 1.0f);
-            guiGraphics.pose().translate(-slot.x, -slot.y, 0);
-            super.renderSlot(guiGraphics, slot);
-            guiGraphics.pose().popPose();
-        } else {
-            super.renderSlot(guiGraphics, slot);
-        }
-    }
-
-    @Override
-    protected boolean isHovering(int x, int y, int width, int height, double mouseX, double mouseY) {
-        Slot slot0 = this.menu.slots.get(0);
-        if (x == slot0.x && y == slot0.y) {
-            return super.isHovering(slot0.x - 1, slot0.y + 5, 34, 22, mouseX, mouseY);
-        }
-        return super.isHovering(x, y, width, height, mouseX, mouseY);
-    }
-
-    @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        this.renderBackground(guiGraphics);
+
+        int k = this.leftPos;
+        int l = this.topPos;
+        this.renderBg(guiGraphics, partialTick, mouseX, mouseY);
+
+        RenderSystem.disableDepthTest();
+        for (net.minecraft.client.gui.components.Renderable renderable : this.renderables) {
+            renderable.render(guiGraphics, mouseX, mouseY, partialTick);
+        }
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(k, l, 0.0F);
+        this.hoveredSlot = null;
+
+        for (int i = 0; i < this.menu.slots.size(); ++i) {
+            Slot slot = this.menu.slots.get(i);
+            if (slot.isActive()) {
+                this.renderSlotCustom(guiGraphics, slot);
+            }
+
+            if (this.isHovering(slot, mouseX, mouseY) && slot.isActive()) {
+                this.hoveredSlot = slot;
+                if (slot.index != 0) {
+                    renderSlotHighlight(guiGraphics, slot.x, slot.y, 0);
+                }
+            }
+        }
+
+        this.renderLabels(guiGraphics, mouseX, mouseY);
+        guiGraphics.pose().popPose();
+        RenderSystem.enableDepthTest();
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+
+        ItemStack carried = this.menu.getCarried();
+        if (!carried.isEmpty()) {
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(0, 0, 250);
+            guiGraphics.renderItem(carried, mouseX - 8, mouseY - 8);
+            guiGraphics.renderItemDecorations(this.font, carried, mouseX - 8, mouseY - 8);
+            guiGraphics.pose().popPose();
+        }
+    }
+
+    private void renderSlotCustom(GuiGraphics guiGraphics, Slot slot) {
+        ItemStack stack = slot.getItem();
+        if (slot.index == 0) {
+            if (!stack.isEmpty()) {
+                guiGraphics.pose().pushPose();
+                guiGraphics.pose().translate(slot.x + 8, slot.y + 8, 0);
+                guiGraphics.pose().scale(2.0f, 2.0f, 1.0f);
+                guiGraphics.renderItem(stack, -8, -8);
+                guiGraphics.renderItemDecorations(this.font, stack, -8, -8);
+                guiGraphics.pose().popPose();
+            }
+        } else {
+            guiGraphics.renderItem(stack, slot.x, slot.y);
+            guiGraphics.renderItemDecorations(this.font, stack, slot.x, slot.y);
+        }
     }
 
     @Override
@@ -368,11 +394,11 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
                 this.imageWidth, this.imageHeight);
 
         Slot slot0 = this.menu.slots.get(0);
-        int slotX = this.leftPos + slot0.x - 1;
-        int slotY = this.topPos + slot0.y + 5;
+        int slotX = this.leftPos + slot0.x - 9;
+        int slotY = this.topPos + slot0.y - 3;
 
         ResourceLocation slotTexture = (this.hoveredSlot == slot0) ? SLOT_HOVER : SLOT_NORMAL;
-        guiGraphics.blitSprite(slotTexture, slotX, slotY, 34, 22);
+        guiGraphics.blit(slotTexture, slotX, slotY, 0, 0, 34, 22, 34, 22);
     }
 
     @Override
@@ -407,5 +433,18 @@ public class CassetteDeckScreen extends AbstractContainerScreen<CassetteDeckMenu
                     false);
             guiGraphics.pose().popPose();
         }
+    }
+
+    @Override
+    protected boolean isHovering(int x, int y, int width, int height, double mouseX, double mouseY) {
+        Slot slot0 = this.menu.slots.get(0);
+        if (x == slot0.x && y == slot0.y) {
+            return super.isHovering(slot0.x - 9, slot0.y - 3, 34, 22, mouseX, mouseY);
+        }
+        return super.isHovering(x, y, width, height, mouseX, mouseY);
+    }
+
+    private boolean isHovering(Slot slot, double mouseX, double mouseY) {
+        return this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY);
     }
 }

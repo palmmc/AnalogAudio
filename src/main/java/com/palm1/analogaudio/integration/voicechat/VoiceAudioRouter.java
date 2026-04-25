@@ -10,16 +10,14 @@ import de.maxhenkel.voicechat.api.Position;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Set;
 import java.util.UUID;
 
 import com.palm1.analogaudio.config.ModConfig;
-import com.palm1.analogaudio.integration.SableCompat;
 import com.palm1.analogaudio.item.WalkieTalkieItem;
+import com.palm1.analogaudio.network.AnalogAudioNetwork;
 import com.palm1.analogaudio.network.packet.RadioSignalS2CPacket;
-import com.palm1.analogaudio.registry.ModDataComponents;
 
 public class VoiceAudioRouter {
 
@@ -46,7 +44,7 @@ public class VoiceAudioRouter {
             return;
         }
 
-        int activeFrequency = walkieTalkie.getOrDefault(ModDataComponents.FREQUENCY.get(), 1);
+        int activeFrequency = WalkieTalkieItem.getFrequency(walkieTalkie);
         @SuppressWarnings("unused")
         byte[] opusData = event.getPacket().getOpusEncodedData();
         UUID channelId = sender.getUuid();
@@ -63,7 +61,7 @@ public class VoiceAudioRouter {
             boolean hasWalkie = false;
             for (ItemStack itemStack : recipient.getInventory().items) {
                 if (itemStack.getItem() instanceof WalkieTalkieItem
-                        && itemStack.getOrDefault(ModDataComponents.FREQUENCY.get(), 1) == activeFrequency) {
+                        && WalkieTalkieItem.getFrequency(itemStack) == activeFrequency) {
                     hasWalkie = true;
                     break;
                 }
@@ -71,7 +69,7 @@ public class VoiceAudioRouter {
             if (!hasWalkie) {
                 for (ItemStack itemStack : recipient.getInventory().offhand) {
                     if (itemStack.getItem() instanceof WalkieTalkieItem
-                            && itemStack.getOrDefault(ModDataComponents.FREQUENCY.get(), 1) == activeFrequency) {
+                            && WalkieTalkieItem.getFrequency(itemStack) == activeFrequency) {
                         hasWalkie = true;
                         break;
                     }
@@ -83,9 +81,10 @@ public class VoiceAudioRouter {
                     VoicechatConnection recipientConn = serverApi.getConnectionOf(recipient.getUUID());
                     if (recipientConn != null) {
                         if (ModConfig.SERVER_CONFIG.enableWalkieFiltering.get()) {
-                            PacketDistributor.sendToPlayer(recipient,
+                            AnalogAudioNetwork.sendToPlayer(
                                     new RadioSignalS2CPacket(
-                                            channelId, actualPlayer.position(), activeFrequency, false));
+                                            channelId, actualPlayer.position(), activeFrequency, false),
+                                    recipient);
                         }
 
                         serverApi.sendStaticSoundPacketTo(recipientConn, staticPacket);
@@ -95,9 +94,6 @@ public class VoiceAudioRouter {
         }
 
         Set<SpeakerInstance> speakers = SpeakerManager.getSpeakersOnFrequency(activeFrequency);
-        if (speakers.isEmpty()) {
-        }
-
         for (SpeakerInstance speaker : speakers) {
             if (speaker.getLevel() == null) {
                 continue;
@@ -121,14 +117,12 @@ public class VoiceAudioRouter {
                         .position(position)
                         .build();
 
-                MinecraftServer server = speaker.getLevel() != null ? speaker.getLevel().getServer()
-                        : null;
+                MinecraftServer server = speaker.getLevel().getServer();
                 if (server == null)
                     return;
 
                 for (net.minecraft.server.level.ServerPlayer recipient : server.getPlayerList().getPlayers()) {
-                    Vec3 recipientGlobalPos = SableCompat
-                            .getGlobalPos(recipient.level(), recipient.position());
+                    Vec3 recipientGlobalPos = recipient.position();
                     double distSq = recipientGlobalPos.distanceToSqr(speakerPos);
 
                     if (distSq > 64 * 64)
@@ -137,11 +131,11 @@ public class VoiceAudioRouter {
                     VoicechatConnection targetConn = serverApi.getConnectionOf(recipient.getUUID());
                     if (targetConn != null) {
                         if (ModConfig.SERVER_CONFIG.enableWalkieFiltering.get()) {
-                            PacketDistributor.sendToPlayer(recipient,
+                            AnalogAudioNetwork.sendToPlayer(
                                     new RadioSignalS2CPacket(
-                                            sessionChannelId, new Vec3(speakerPos.x(),
-                                                    speakerPos.y(), speakerPos.z()),
-                                            activeFrequency, true));
+                                            sessionChannelId, speakerPos,
+                                            activeFrequency, true),
+                                    recipient);
                         }
 
                         serverApi.sendLocationalSoundPacketTo(targetConn, locationalPacket);

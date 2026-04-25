@@ -36,11 +36,9 @@ public class AnalogAudioVoicechatPlugin implements VoicechatPlugin {
 
     @Override
     public void registerEvents(EventRegistration registration) {
-        // Server Events
         registration.registerEvent(MicrophonePacketEvent.class, VoiceAudioRouter::onMicrophonePacket);
         registration.registerEvent(VoicechatServerStartedEvent.class, this::onServerStarted);
 
-        // Client Events
         registration.registerEvent(ClientReceiveSoundEvent.EntitySound.class, ClientAudioProcessor::onSoundReceived);
         registration.registerEvent(ClientReceiveSoundEvent.LocationalSound.class,
                 ClientAudioProcessor::onSoundReceived);

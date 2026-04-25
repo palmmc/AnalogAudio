@@ -5,8 +5,6 @@ import org.lwjgl.openal.AL11;
 import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.system.MemoryStack;
 
-import com.palm1.analogaudio.integration.SableCompat;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -70,11 +68,12 @@ public class RadioStreamer {
                     ShortBuffer decodedPcm = STBVorbis.stb_vorbis_decode_filename(oggFile.toString(), channels,
                             sampleRate);
                     if (decodedPcm == null) {
-                        com.palm1.analogaudio.AnalogAudio.LOGGER.error("Failed to decode: {}", oggFile);
+                        com.palm1.analogaudio.AnalogAudio.LOGGER.error("Failed to decode OGG filename (decodedPcm is null): {}", oggFile);
                         return;
                     }
 
                     int numChannels = channels.get(0);
+                    com.palm1.analogaudio.AnalogAudio.LOGGER.info("Decoded OGG: {} channels, {} Hz", numChannels, sampleRate.get(0));
                     int format = (numChannels == 1) ? AL10.AL_FORMAT_MONO16 : AL10.AL_FORMAT_MONO16;
 
                     if (numChannels == 2) {
@@ -99,6 +98,7 @@ public class RadioStreamer {
                 }
 
                 sourceId = AL10.alGenSources();
+                com.palm1.analogaudio.AnalogAudio.LOGGER.info("Generated OpenAL source ID: {}", sourceId);
                 AL10.alSourcei(sourceId, AL10.AL_BUFFER, bufferId);
                 AL10.alSourcef(sourceId, AL10.AL_REFERENCE_DISTANCE, 16.0f);
                 AL10.alSourcef(sourceId, AL10.AL_MAX_DISTANCE, 64.0f);
@@ -128,8 +128,14 @@ public class RadioStreamer {
                 }
 
                 AL10.alSourcePlay(sourceId);
+                int err = AL10.alGetError();
+                if (err != AL10.AL_NO_ERROR) {
+                    com.palm1.analogaudio.AnalogAudio.LOGGER.error("OpenAL Error during play: {}", err);
+                }
                 playing = true;
+                com.palm1.analogaudio.AnalogAudio.LOGGER.info("Successfully started OpenAL playback for source {}", sourceId);
             } catch (Exception e) {
+                com.palm1.analogaudio.AnalogAudio.LOGGER.error("Exception in RadioStreamer.play: {}", e.getMessage());
                 e.printStackTrace();
             }
         });
@@ -164,10 +170,8 @@ public class RadioStreamer {
                 return;
             }
 
-            Vec3 globalPos = SableCompat.getGlobalPos(level,
-                    centerPos);
-            Vec3 velocity = SableCompat.getVelocity(level,
-                    centerPos);
+            Vec3 globalPos = centerPos;
+            Vec3 velocity = Vec3.ZERO;
 
             double dist = Math.sqrt(player.distanceToSqr(globalPos.x, globalPos.y, globalPos.z));
             float gain = (dist > 64.0) ? 0.0f : (dist > 48.0) ? (float) ((64.0 - dist) / 16.0) : 1.0f;

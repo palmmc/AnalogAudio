@@ -1,10 +1,10 @@
 package com.palm1.analogaudio.recipe;
 
-import net.minecraft.core.HolderLookup;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
@@ -13,25 +13,24 @@ import net.minecraft.world.level.Level;
 import java.util.UUID;
 
 import com.palm1.analogaudio.item.CassetteData;
-import com.palm1.analogaudio.registry.ModDataComponents;
 import com.palm1.analogaudio.registry.ModItems;
 import com.palm1.analogaudio.registry.ModRecipeSerializers;
 
 public class DirectColoredCassetteRecipe extends CustomRecipe {
 
-    public DirectColoredCassetteRecipe(CraftingBookCategory category) {
-        super(category);
+    public DirectColoredCassetteRecipe(ResourceLocation id, CraftingBookCategory category) {
+        super(id, category);
     }
 
     @Override
-    public boolean matches(CraftingInput input, Level level) {
+    public boolean matches(CraftingContainer input, Level level) {
         boolean hasKelp = false;
         boolean hasRedstone = false;
         boolean hasGold = false;
         boolean hasDye = false;
         int count = 0;
 
-        for (int i = 0; i < input.size(); ++i) {
+        for (int i = 0; i < input.getContainerSize(); ++i) {
             ItemStack stack = input.getItem(i);
             if (!stack.isEmpty()) {
                 count++;
@@ -55,10 +54,10 @@ public class DirectColoredCassetteRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
+    public ItemStack assemble(CraftingContainer input, net.minecraft.core.RegistryAccess registryAccess) {
         int color = 0xFFFFFF;
 
-        for (int i = 0; i < input.size(); ++i) {
+        for (int i = 0; i < input.getContainerSize(); ++i) {
             ItemStack stack = input.getItem(i);
             if (!stack.isEmpty() && stack.getItem() instanceof DyeItem dyeItem) {
                 color = dyeItem.getDyeColor().getFireworkColor();
@@ -68,7 +67,7 @@ public class DirectColoredCassetteRecipe extends CustomRecipe {
 
         ItemStack result = new ItemStack(ModItems.CASSETTE_TAPE.get());
         CassetteData data = new CassetteData(UUID.randomUUID().toString(), "", "", 0xFF000000 | color);
-        result.set(ModDataComponents.CASSETTE_DATA.get(), data);
+        CassetteData.set(result, data);
 
         return result;
     }

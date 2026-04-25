@@ -1,20 +1,20 @@
 package com.palm1.analogaudio.inventory;
 
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.SimpleContainer;
 
 import com.palm1.analogaudio.block.entity.CassetteDeckBlockEntity;
 import com.palm1.analogaudio.registry.ModMenus;
 
-import net.minecraft.world.SimpleContainer;
-
 public class CassetteDeckMenu extends AbstractContainerMenu {
     private final SimpleContainer inventory;
 
-    public CassetteDeckMenu(int containerId, Inventory playerInventory) {
+    public CassetteDeckMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         this(containerId, playerInventory, new SimpleContainer(1));
     }
 
@@ -27,12 +27,7 @@ public class CassetteDeckMenu extends AbstractContainerMenu {
         this.inventory = inventory;
         this.inventory.startOpen(playerInventory.player);
 
-        this.addSlot(new CassetteSlot(inventory, 0, 75, 57) {
-            @Override
-            public boolean isHighlightable() {
-                return false;
-            }
-        });
+        this.addSlot(new CassetteSlot(inventory, 0, 83, 65));
 
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 9; ++j) {

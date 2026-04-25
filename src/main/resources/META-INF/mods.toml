@@ -1,13 +1,13 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
-issueTrackerURL="https://github.com/palmmc/AnalogAudio/issues"
+issueTrackerURL="https://github.com/PalmMc/AnalogAudio/issues"
 
 [[mods]]
-
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
+displayURL="https://modrinth.com/mod/analog-audio"
 logoFile="icon.png"
 authors="palm1"
 description='''
@@ -15,22 +15,22 @@ Bring the warm comfort of analog audio mediums to your world!
 '''
 
 [[dependencies.${mod_id}]]
-    modId="neoforge"
-    type="required"
-    versionRange="[${neo_version},)"
+    modId="forge"
+    mandatory=true
+    versionRange="${forge_version}"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
     modId="minecraft"
-    type="required"
+    mandatory=true
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
     modId="voicechat"
-    type="optional"
-    versionRange="[1.21.1-2.6.0,)"
-    ordering="AFTER"
+    mandatory=false
+    versionRange="[1.20.1-2.6,)"
+    ordering="NONE"
     side="BOTH"

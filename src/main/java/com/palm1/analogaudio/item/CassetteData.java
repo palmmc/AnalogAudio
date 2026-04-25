@@ -1,22 +1,38 @@
 package com.palm1.analogaudio.item;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
+
+import javax.annotation.Nullable;
 
 public record CassetteData(String uuid, String url, String name, int color) {
-        public static final Codec<CassetteData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                        Codec.STRING.fieldOf("uuid").forGetter(CassetteData::uuid),
-                        Codec.STRING.fieldOf("url").forGetter(CassetteData::url),
-                        Codec.STRING.fieldOf("name").forGetter(CassetteData::name),
-                        Codec.INT.fieldOf("color").forGetter(CassetteData::color)).apply(instance, CassetteData::new));
+    public CompoundTag save() {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("uuid", uuid);
+        tag.putString("url", url);
+        tag.putString("name", name);
+        tag.putInt("color", color);
+        return tag;
+    }
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, CassetteData> STREAM_CODEC = StreamCodec.composite(
-                        ByteBufCodecs.STRING_UTF8, CassetteData::uuid,
-                        ByteBufCodecs.STRING_UTF8, CassetteData::url,
-                        ByteBufCodecs.STRING_UTF8, CassetteData::name,
-                        ByteBufCodecs.INT, CassetteData::color,
-                        CassetteData::new);
+    public static CassetteData load(CompoundTag tag) {
+        return new CassetteData(
+            tag.getString("uuid"),
+            tag.getString("url"),
+            tag.getString("name"),
+            tag.getInt("color")
+        );
+    }
+
+    @Nullable
+    public static CassetteData get(ItemStack stack) {
+        if (stack.hasTag() && stack.getTag().contains("CassetteData")) {
+            return load(stack.getTag().getCompound("CassetteData"));
+        }
+        return null;
+    }
+
+    public static void set(ItemStack stack, CassetteData data) {
+        stack.getOrCreateTag().put("CassetteData", data.save());
+    }
 }

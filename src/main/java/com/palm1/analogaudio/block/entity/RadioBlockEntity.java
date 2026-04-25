@@ -1,7 +1,6 @@
 package com.palm1.analogaudio.block.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -16,13 +15,17 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.Containers;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.palm1.analogaudio.inventory.RadioMenu;
 import com.palm1.analogaudio.block.RadioBlock;
+import com.palm1.analogaudio.client.audio.ClientAudioEngine;
+import com.palm1.analogaudio.item.CassetteData;
 import com.palm1.analogaudio.registry.ModBlockEntities;
-import com.palm1.analogaudio.registry.ModDataComponents;
 import com.palm1.analogaudio.registry.ModSounds;
 import com.palm1.analogaudio.registry.ModItems;
 
@@ -54,7 +57,8 @@ public class RadioBlockEntity extends BlockEntity implements MenuProvider {
             ItemStack currentCassette = getCassette();
             boolean isEmpty = currentCassette.isEmpty();
             boolean itemChanged = !ItemStack.matches(currentCassette, lastCassette);
-            boolean hasData = !isEmpty && currentCassette.has(ModDataComponents.CASSETTE_DATA.get());
+            CassetteData data = CassetteData.get(currentCassette);
+            boolean hasData = data != null;
 
             if (this.level != null && !this.level.isClientSide()) {
                 if (itemChanged) {
@@ -67,14 +71,14 @@ public class RadioBlockEntity extends BlockEntity implements MenuProvider {
 
                 if (hasData) {
                     this.level.playSound(null, this.worldPosition, ModSounds.CASSETTE_INSERT.get(),
-                            SoundSource.BLOCKS, 1.0f, 1.0f);
+                            SoundSource.BLOCKS, 0.5f, 1.0f);
                     this.playing = true;
                     this.startTime = this.level.getGameTime();
                     this.pausedOffset = 0;
                 } else {
                     if (isEmpty) {
                         this.level.playSound(null, this.worldPosition, ModSounds.CASSETTE_EJECT.get(),
-                                SoundSource.BLOCKS, 1.0f, 1.0f);
+                                SoundSource.BLOCKS, 0.5f, 1.0f);
                     }
                     this.playing = false;
                     this.startTime = 0;
@@ -107,7 +111,6 @@ public class RadioBlockEntity extends BlockEntity implements MenuProvider {
 
     public void setPowered(boolean powered) {
         if (powered && !wasPowered && this.level != null) {
-            // Restart if powered by redstone pulse.
             this.startTime = this.level.getGameTime();
             this.pausedOffset = 0;
             this.playing = true;
@@ -138,9 +141,9 @@ public class RadioBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.put("Inventory", inventory.createTag(registries));
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        tag.put("Inventory", inventory.createTag());
         tag.putLong("StartTime", startTime);
         tag.putFloat("Volume", volume);
         tag.putBoolean("Looping", looping);
@@ -152,9 +155,9 @@ public class RadioBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        inventory.fromTag(tag.getList("Inventory", 10), registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        inventory.fromTag(tag.getList("Inventory", 10));
         startTime = tag.getLong("StartTime");
         if (startTime > 1000000000000L) {
             startTime = 0;
@@ -208,7 +211,7 @@ public class RadioBlockEntity extends BlockEntity implements MenuProvider {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return new RadioMenu(id, inv, worldPosition);
+        return new RadioMenu(id, inv, getBlockPos());
     }
 
     @Nullable
@@ -218,9 +221,44 @@ public class RadioBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
+        saveAdditional(tag);
         return tag;
+    }
+
+    public void drops() {
+        Containers.dropContents(this.level, this.worldPosition, inventory);
+    }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, RadioBlockEntity blockEntity) {
+        if (level.isClientSide()) {
+            if (blockEntity.playing) {
+                ItemStack cassette = blockEntity.getCassette();
+                CassetteData data = CassetteData.get(cassette);
+                if (data != null && !data.url().isEmpty()) {
+                    Vec3 vecPos = Vec3.atCenterOf(pos);
+                    ClientAudioEngine.tickRadio(
+                            pos,
+                            vecPos,
+                            data,
+                            blockEntity.startTime,
+                            blockEntity.volume,
+                            blockEntity.looping);
+                } else {
+                    ClientAudioEngine.stopRadio(pos);
+                }
+            } else {
+                ClientAudioEngine.stopRadio(pos);
+            }
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        if (this.level != null && this.level.isClientSide()) {
+            ClientAudioEngine.stopRadio(this.worldPosition);
+        }
+        super.setRemoved();
     }
 }

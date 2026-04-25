@@ -1,6 +1,7 @@
 package com.palm1.analogaudio.client.gui;
 
 import com.mojang.blaze3d.platform.Window;
+import com.mojang.math.Axis;
 import com.palm1.analogaudio.AnalogAudio;
 import com.palm1.analogaudio.registry.ModSounds;
 
@@ -18,7 +19,7 @@ import org.lwjgl.glfw.GLFW;
 import java.util.function.Consumer;
 
 public class RotaryTunerScreen extends Screen {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(AnalogAudio.MODID,
+    private static final ResourceLocation TEXTURE = new ResourceLocation(AnalogAudio.MODID,
             "textures/gui/rotary_frequency.png");
 
     private int ticksOpen = 0;
@@ -82,7 +83,7 @@ public class RotaryTunerScreen extends Screen {
         graphics.pose().pushPose();
         graphics.pose().translate(centerX, centerY, 100);
         graphics.pose().pushPose();
-        graphics.pose().rotateAround(com.mojang.math.Axis.ZP.rotationDegrees(renderRotation), 0, 0, 0);
+        graphics.pose().mulPose(Axis.ZP.rotationDegrees(renderRotation));
         graphics.blit(TEXTURE, -90, -90, 0, 0, 180, 180, 256, 256);
 
         for (int i = 1; i <= 9; i++) {
@@ -108,7 +109,7 @@ public class RotaryTunerScreen extends Screen {
         }
 
         graphics.pose().pushPose();
-        graphics.pose().rotateAround(com.mojang.math.Axis.ZP.rotationDegrees(POINTER_ANGLE), 0, 0, 0);
+        graphics.pose().mulPose(Axis.ZP.rotationDegrees(POINTER_ANGLE));
         graphics.blit(TEXTURE, -8, -80, 181, 0, 16, 80, 256, 256);
         graphics.pose().popPose();
         graphics.blit(TEXTURE, -12, -12, 181, 81, 24, 24, 256, 256);
@@ -190,6 +191,6 @@ public class RotaryTunerScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
+    public void renderBackground(@NotNull GuiGraphics graphics) {
     }
 }

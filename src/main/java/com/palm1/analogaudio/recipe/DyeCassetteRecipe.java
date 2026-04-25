@@ -1,14 +1,13 @@
 package com.palm1.analogaudio.recipe;
 
 import com.palm1.analogaudio.item.CassetteData;
-import com.palm1.analogaudio.registry.ModDataComponents;
 import com.palm1.analogaudio.registry.ModItems;
 import com.palm1.analogaudio.registry.ModRecipeSerializers;
 
-import net.minecraft.core.HolderLookup;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
@@ -16,16 +15,16 @@ import net.minecraft.world.level.Level;
 
 public class DyeCassetteRecipe extends CustomRecipe {
 
-    public DyeCassetteRecipe(CraftingBookCategory category) {
-        super(category);
+    public DyeCassetteRecipe(ResourceLocation id, CraftingBookCategory category) {
+        super(id, category);
     }
 
     @Override
-    public boolean matches(CraftingInput input, Level level) {
+    public boolean matches(CraftingContainer input, Level level) {
         int cassettes = 0;
         int dyes = 0;
 
-        for (int i = 0; i < input.size(); ++i) {
+        for (int i = 0; i < input.getContainerSize(); ++i) {
             ItemStack stack = input.getItem(i);
             if (!stack.isEmpty()) {
                 if (stack.is(ModItems.CASSETTE_TAPE.get())) {
@@ -42,13 +41,13 @@ public class DyeCassetteRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
+    public ItemStack assemble(CraftingContainer input, net.minecraft.core.RegistryAccess registryAccess) {
         int[] rgbSum = new int[3];
         int maxIntensity = 0;
         int dyeCount = 0;
         ItemStack cassette = ItemStack.EMPTY;
 
-        for (int i = 0; i < input.size(); ++i) {
+        for (int i = 0; i < input.getContainerSize(); ++i) {
             ItemStack stack = input.getItem(i);
             if (!stack.isEmpty()) {
                 if (stack.is(ModItems.CASSETTE_TAPE.get())) {
@@ -71,11 +70,13 @@ public class DyeCassetteRecipe extends CustomRecipe {
             return ItemStack.EMPTY;
         }
 
-        CassetteData oldData = cassette.get(ModDataComponents.CASSETTE_DATA.get());
+        CassetteData oldData = CassetteData.get(cassette);
+        int oldColor = 0xFFFFFF;
         if (oldData != null && oldData.color() != 0xFFFFFF && oldData.color() != 0) {
-            int r = (oldData.color() >> 16) & 255;
-            int g = (oldData.color() >> 8) & 255;
-            int b = oldData.color() & 255;
+            oldColor = oldData.color();
+            int r = (oldColor >> 16) & 255;
+            int g = (oldColor >> 8) & 255;
+            int b = oldColor & 255;
             maxIntensity += Math.max(r, Math.max(g, b));
             rgbSum[0] += r;
             rgbSum[1] += g;
@@ -95,11 +96,9 @@ public class DyeCassetteRecipe extends CustomRecipe {
 
         ItemStack result = cassette.copy();
         if (oldData != null) {
-            result.set(ModDataComponents.CASSETTE_DATA.get(),
-                    new CassetteData(oldData.uuid(), oldData.url(), oldData.name(), finalColor));
+            CassetteData.set(result, new CassetteData(oldData.uuid(), oldData.url(), oldData.name(), finalColor));
         } else {
-            result.set(ModDataComponents.CASSETTE_DATA.get(),
-                    new CassetteData("", "", "", finalColor));
+            CassetteData.set(result, new CassetteData("", "", "", finalColor));
         }
 
         return result;
