@@ -3,6 +3,7 @@ package com.palm1.analogaudio.registry;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -21,14 +22,18 @@ public class ModItems {
     public static final RegistryObject<Item> CASSETTE_DECK = ITEMS.register("cassette_deck",
             () -> new BlockItem(ModBlocks.CASSETTE_DECK.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> SPEAKER = ITEMS.register("speaker",
-            () -> new BlockItem(ModBlocks.SPEAKER.get(), new Item.Properties()));
+    public static final RegistryObject<Item> SPEAKER = ModList.get().isLoaded("voicechat")
+            ? ITEMS.register("speaker",
+                    () -> new BlockItem(ModBlocks.SPEAKER.get(), new Item.Properties()))
+            : null;
 
     public static final RegistryObject<Item> CASSETTE_TAPE = ITEMS.register("cassette_tape",
             () -> new CassetteTapeItem(new Item.Properties().stacksTo(1)));
 
-    public static final RegistryObject<Item> WALKIE_TALKIE = ITEMS.register("walkie_talkie",
-            () -> new WalkieTalkieItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> WALKIE_TALKIE = ModList.get().isLoaded("voicechat")
+            ? ITEMS.register("walkie_talkie",
+                    () -> new WalkieTalkieItem(new Item.Properties().stacksTo(1)))
+            : null;
 
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);

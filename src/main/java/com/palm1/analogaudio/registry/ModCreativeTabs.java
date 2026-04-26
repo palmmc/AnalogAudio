@@ -21,9 +21,11 @@ public class ModCreativeTabs {
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.RADIO.get());
                         output.accept(ModItems.CASSETTE_DECK.get());
-                        output.accept(ModItems.SPEAKER.get());
+                        if (ModItems.SPEAKER != null)
+                            output.accept(ModItems.SPEAKER.get());
                         output.accept(ModItems.CASSETTE_TAPE.get());
-                        output.accept(ModItems.WALKIE_TALKIE.get());
+                        if (ModItems.WALKIE_TALKIE != null)
+                            output.accept(ModItems.WALKIE_TALKIE.get());
                     })
                     .build());
 

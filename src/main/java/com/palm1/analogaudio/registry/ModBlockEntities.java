@@ -2,6 +2,7 @@ package com.palm1.analogaudio.registry;
 
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -22,9 +23,10 @@ public class ModBlockEntities {
     public static final RegistryObject<BlockEntityType<RadioBlockEntity>> RADIO = BLOCK_ENTITIES.register("radio",
             () -> BlockEntityType.Builder.of(RadioBlockEntity::new, ModBlocks.RADIO.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<SpeakerBlockEntity>> SPEAKER = BLOCK_ENTITIES
-            .register("speaker",
-                    () -> BlockEntityType.Builder.of(SpeakerBlockEntity::new, ModBlocks.SPEAKER.get()).build(null));
+    public static final RegistryObject<BlockEntityType<SpeakerBlockEntity>> SPEAKER = ModList.get().isLoaded("voicechat")
+            ? BLOCK_ENTITIES.register("speaker",
+                    () -> BlockEntityType.Builder.of(SpeakerBlockEntity::new, ModBlocks.SPEAKER.get()).build(null))
+            : null;
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);

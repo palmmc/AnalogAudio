@@ -37,7 +37,8 @@ public class AnalogAudioClient {
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlockEntities.RADIO.get(), RadioBlockRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.CASSETTE_DECK.get(), CassetteDeckBlockRenderer::new);
-        event.registerBlockEntityRenderer(ModBlockEntities.SPEAKER.get(), SpeakerBlockRenderer::new);
+        if (ModBlockEntities.SPEAKER != null)
+            event.registerBlockEntityRenderer(ModBlockEntities.SPEAKER.get(), SpeakerBlockRenderer::new);
     }
 
     public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
@@ -55,7 +56,9 @@ public class AnalogAudioClient {
 
     public static void registerModels(ModelEvent.RegisterAdditional event) {
         event.register(new ResourceLocation(AnalogAudio.MODID, "item/cassette_tape_3d"));
-        event.register(com.palm1.analogaudio.client.render.WalkieTalkieRenderer.BODY_MODEL);
-        event.register(com.palm1.analogaudio.client.render.WalkieTalkieRenderer.BUTTON_MODEL);
+        if (net.minecraftforge.fml.ModList.get().isLoaded("voicechat")) {
+            event.register(com.palm1.analogaudio.client.render.WalkieTalkieRenderer.BODY_MODEL);
+            event.register(com.palm1.analogaudio.client.render.WalkieTalkieRenderer.BUTTON_MODEL);
+        }
     }
 }
