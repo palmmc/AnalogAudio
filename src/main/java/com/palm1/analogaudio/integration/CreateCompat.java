@@ -55,7 +55,10 @@ public class CreateCompat {
                         .forName("com.simibubi.create.api.behaviour.movement.MovementBehaviour");
                 Field registryField = movementBehaviourClass.getField("REGISTRY");
                 Object registry = registryField.get(null);
-                Method addMethod = registry.getClass().getMethod("register", Block.class, movementBehaviourClass);
+                // SimpleRegistry<K, V>.register(K, V) is generic -> erased to register(Object, Object).
+                // Look it up on the public API interface (the runtime class is package-private).
+                Method addMethod = Class.forName("com.simibubi.create.api.registry.SimpleRegistry")
+                        .getMethod("register", Object.class, Object.class);
 
                 Object behavior = Class.forName("com.palm1.analogaudio.integration.create.RadioMovementBehaviour")
                         .getDeclaredConstructor().newInstance();
